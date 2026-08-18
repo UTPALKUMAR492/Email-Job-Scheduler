@@ -1,143 +1,142 @@
-# 🚀 ReachInbox – Full-Stack Email Job Scheduler
+# ReachInbox Email Scheduler
 
-A production-grade **email scheduling system** built using **Express + BullMQ + Redis + PostgreSQL** with a **React dashboard**.
-This project demonstrates **reliable delayed job processing**, **rate limiting**, **persistence across restarts**, and a **clean frontend UI** as required by the ReachInbox hiring assignment.
+A full-stack email scheduling application built with React, Express, PostgreSQL, Redis, and BullMQ. It allows users to schedule single or bulk emails, track scheduled and sent messages, and apply rate-limiting rules before jobs are delivered.
 
----
+## Overview
 
-## 📌 Features Implemented
+This project is designed to simulate a real email-job scheduling platform where emails are queued, delayed, processed asynchronously, and stored in a database for tracking.
 
-### ✅ Backend
+The app includes:
+- Single email scheduling
+- Bulk email scheduling
+- Redis-backed job queue using BullMQ
+- PostgreSQL persistence with Prisma
+- Email sending through Nodemailer and Ethereal test SMTP
+- Rate limiting to prevent sending too many emails in one hour
+- Google OAuth-based login in the frontend
+- Dashboard for viewing scheduled and sent emails
 
-* Email scheduling via REST API
-* Persistent delayed jobs using **BullMQ + Redis**
-* PostgreSQL storage using **Prisma ORM**
-* Fake SMTP delivery via **Ethereal Email**
-* Worker concurrency support
-* Hourly rate limiting using **Redis counters**
-* Minimum delay between emails
-* Safe retry & rescheduling when limits are exceeded
-* Idempotent job handling
-* Survives server restarts without losing jobs
+## Tech Stack
 
-### ✅ Frontend
+### Frontend
+- React
+- TypeScript
+- Vite
+- Google OAuth
 
-* React + TypeScript dashboard
-* Google OAuth login
-* Schedule new emails
-* View **Scheduled Emails**
-* View **Sent Emails**
-* Loading & empty states
-* Clean UI inspired by provided Figma
+### Backend
+- Node.js
+- Express
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- BullMQ
+- Redis
+- Nodemailer
 
----
+## Project Structure
 
-## 🏗️ Architecture Overview
-
-```
-Frontend (React)
-   |
-   | REST API
-   v
-Backend (Express + TypeScript)
-   |
-   | Stores metadata
-   v
-PostgreSQL (Prisma ORM)
-   |
-   | Job scheduling
-   v
-BullMQ Queue (Redis)
-   |
-   | Worker processing
-   v
-Email Worker → Ethereal SMTP
-```
-
----
-
-## ⚙️ Tech Stack
-
-| Layer              | Technology             |
-| ------------------ | ---------------------- |
-| Frontend           | React, TypeScript, CSS |
-| Backend            | Express.js, TypeScript |
-| Queue              | BullMQ                 |
-| Cache / Rate Limit | Redis                  |
-| Database           | PostgreSQL             |
-| ORM                | Prisma                 |
-| Email              | Nodemailer + Ethereal  |
-| Auth               | Google OAuth           |
-| Infra              | Docker (Redis + DB)    |
-
----
-
-## 🧪 Rate Limiting & Delay Logic
-
-### 📌 Hourly Rate Limiting
-
-* Redis keys follow this pattern:
-
-```
-email_count:{sender}:{YYYY-MM-DD-HH}
+```text
+reachinbox-email-scheduler/
+├── backend/
+│   ├── prisma/
+│   │   ├── migrations/
+│   │   └── schema.prisma
+│   ├── src/
+│   │   ├── config/
+│   │   │   ├── prisma.ts
+│   │   │   └── redis.ts
+│   │   ├── queue/
+│   │   │   ├── email.queue.ts
+│   │   │   └── email.worker.ts
+│   │   ├── utils/
+│   │   │   ├── mailer.ts
+│   │   │   └── rateLimiter.ts
+│   │   ├── app.ts
+│   │   └── server.ts
+│   ├── .env
+│   ├── .env.example
+│   ├── package.json
+│   └── tsconfig.json
+├── frontend/
+│   ├── src/
+│   ├── .env
+│   ├── package.json
+│   └── vite.config.ts
+├── docker-compose.yml
+├── README.md
+└── Resultscreenshots/
 ```
 
-Example:
+## Features
 
-```
-email_count:no-reply@reachinbox.dev:2026-01-31-12
-```
+### Backend Features
+- Schedule email jobs with a specific delivery time
+- Schedule multiple emails in one request
+- Store email metadata in PostgreSQL
+- Process jobs asynchronously with BullMQ workers
+- Use Redis to track hourly email counts
+- Reschedule jobs when the hourly send limit is reached
+- Maintain email status as scheduled or sent
+- Return all scheduled or sent records via API
 
-* Each email increments a Redis counter
-* Keys auto-expire after 1 hour
-* When limit is exceeded:
+### Frontend Features
+- Login with Google account
+- Compose and send scheduling requests
+- View scheduled emails
+- View sent emails
+- Auto-refresh dashboard data every few seconds
 
-  * Job is **delayed to the next hour**
-  * No job is dropped
-  * Order is preserved
+## Environment Variables
 
-### 📌 Minimum Delay Between Emails
+### Backend
+Create a file named .env in the backend folder:
 
-* Configurable via `.env`
-
-```
+```env
+DATABASE_URL=postgresql://reachinbox:reachinbox@localhost:5432/reachinbox
+PORT=4000
+MAX_EMAILS_PER_HOUR=25
 MIN_DELAY_BETWEEN_EMAILS_MS=2000
+WORKER_CONCURRENCY=5
+ETHEREAL_HOST=smtp.ethereal.email
+ETHEREAL_PORT=587
+ETHEREAL_USER=your_ethereal_user
+ETHEREAL_PASS=your_ethereal_pass
 ```
 
-* Enforced in worker logic
+### Frontend
+Create a file named .env in the frontend folder:
 
----
+```env
+VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
+```
 
-## 🧪 How to Run Locally
+## Installation and Setup
 
-### 1️⃣ Start Redis & PostgreSQL
+### 1. Start supporting services
 
 ```bash
 docker compose up -d
 ```
 
----
+This starts:
+- Redis on port 6379
+- PostgreSQL on port 5432
 
-### 2️⃣ Backend Setup
+### 2. Backend setup
 
 ```bash
 cd backend
 npm install
+npx prisma generate
 npx prisma migrate dev
 npm run dev
 ```
 
----
+The backend server starts on:
+- http://localhost:4000
 
-### 3️⃣ Start Worker
-
-```bash
-npx ts-node src/queue/email.worker.ts
-```
-
----
-
-### 4️⃣ Frontend Setup
+### 3. Frontend setup
 
 ```bash
 cd frontend
@@ -145,89 +144,93 @@ npm install
 npm run dev
 ```
 
-Open:
+The frontend app runs on:
+- http://localhost:5173
 
-```
-http://localhost:5173
-```
+## API Endpoints
 
----
+### Schedule a single email
 
-## 🔐 Environment Variables
-
-### backend/.env
-
-```env
-DATABASE_URL=postgresql://reachinbox:reachinbox@localhost:5432/reachinbox
-
-ETHEREAL_HOST=smtp.ethereal.email
-ETHEREAL_PORT=587
-ETHEREAL_USER=your_ethereal_user
-ETHEREAL_PASS=your_ethereal_pass
-
-MAX_EMAILS_PER_HOUR=2
-MIN_DELAY_BETWEEN_EMAILS_MS=2000
+```http
+POST /schedule-email
 ```
 
----
+Request body:
 
-## 🧪 Testing Scenarios (With Proof) 
-
-📸 **Screenshot:**
-![Single Email Test](Resultscreenshots/login.png)
-![Google auth](Resultscreenshots/googleauth.png)
-![Interphase](Resultscreenshots/interphase.png)
-![Bulk Email Test](Resultscreenshots/bulkemailtest.png)
-
-
----
-
-## 🎥 Demo Video
-
-📹 **5-minute demo includes:**
-- Google login
-- Scheduling emails
-- Scheduled → Sent flow
-- Rate limiting behavior
-- Restart proof
-
-▶️ **Watch Demo Video:**  
-🔗 https://drive.google.com/file/d/1fjrgDX1EKTESUQqgsP5gn7Tc4td_nRfh/view?usp=sharing
-
-
----
-
-## 📦 GitHub Submission Details
-
-* Repository: **Private**
-* Collaborator added: `Mitrajit`
-* Monorepo structure:
-
-```
-/backend
-/frontend
-/docker-compose.yml
-/README.md
-/screenshots/
+```json
+{
+  "toEmail": "user@example.com",
+  "subject": "Test Email",
+  "body": "Hello from ReachInbox",
+  "scheduledAt": "2026-08-18T12:30:00.000Z"
+}
 ```
 
----
+### Schedule multiple emails
 
-## ✅ Assignment Checklist
+```http
+POST /schedule-bulk
+```
 
-✔ No cron jobs
-✔ Persistent scheduling
-✔ Redis-backed rate limiting
-✔ Worker concurrency
-✔ Restart safety
-✔ Frontend dashboard
-✔ Google OAuth
-✔ Clean architecture
+Request body:
 
----
+```json
+{
+  "emails": ["a@example.com", "b@example.com", "c@example.com"],
+  "subject": "Bulk Campaign",
+  "body": "This is a bulk test email",
+  "startTime": "2026-08-18T12:00:00.000Z",
+  "delayBetween": 2000
+}
+```
 
-## 🙌 Final Note
+### Get emails by status
 
-This project is a **faithful implementation of a real-world email scheduling system**, designed to scale and survive failures—mirroring ReachInbox’s core backend responsibilities.
+```http
+GET /emails?status=scheduled
+GET /emails?status=sent
+```
+
+## Rate Limiting Logic
+
+The worker checks a Redis counter per hour before sending an email.
+
+- Key pattern: `email_count:global:<YYYY-MM-DD-HH>`
+- Default hourly limit: `MAX_EMAILS_PER_HOUR`
+- Default minimum delay between jobs: `MIN_DELAY_BETWEEN_EMAILS_MS`
+
+If the limit is reached:
+- the job is delayed to the next hour
+- it is not dropped
+- the queue continues processing it later
+
+## Database Model
+
+The Prisma schema defines a single Email model:
+
+```prisma
+model Email {
+  id          String   @id @default(uuid())
+  toEmail     String
+  subject     String
+  body        String
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String
+  jobId       String   @unique
+  createdAt   DateTime @default(now())
+}
+```
+
+## Notes
+
+- The app uses Ethereal Email as a test SMTP service for email preview and delivery testing.
+- The frontend uses a Google OAuth client ID from the environment file.
+- Screenshot assets are stored in the Resultscreenshots folder for reference.
+- The project is set up as a monorepo with separate backend and frontend folders.
+
+## License
+
+This project is licensed under the ISC license.
 
 
